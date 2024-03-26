@@ -1,21 +1,20 @@
 import os
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess, LogInfo, TimerAction
-from launch.conditions import UnlessCondition, IfCondition
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription
+from launch.conditions import IfCondition
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
-from launch.substitutions import PathJoinSubstitution
-from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
     yaml_config_dir = os.path.join(get_package_share_directory('data2bag'), 'config', 'kitti.yaml')
-    rviz_config_dir = os.path.join(get_package_share_directory('data2bag'), 'config', 'kitti.rviz')
-    save_bag_path = "/home/myx/develop/data/test_data/data_bag"
+
+    save_bag_path = "/home/myx/develop/Swarm-SLAM/src/cslam_experiments/data/KITTI00/kitti-1"
 
     return LaunchDescription([
-        DeclareLaunchArgument('if_bag_record', default_value='True', description='Whether to record bag or not'),
+        DeclareLaunchArgument('if_bag_record', default_value='False', description='Whether to record bag or not'),
         DeclareLaunchArgument('if_rviz2_open', default_value='True', description='Whether to open rviz2 or not'),
 
         Node(
@@ -26,15 +25,6 @@ def generate_launch_description():
             parameters=[yaml_config_dir],
         ),
 
-        Node(
-            package="rviz2",
-            executable="rviz2",
-            name="rviz2",
-            output="screen",
-            arguments=['-d', rviz_config_dir],
-            condition=IfCondition(LaunchConfiguration("if_rviz2_open"))
-        ),
-
         ExecuteProcess(
             cmd=['ros2', 'bag', 'record', '-o', save_bag_path, "/kitti/point_cloud", "/kitti/image/gray/left",
                  "/kitti/image/gray/right", "/kitti/image/color/left", "/kitti/image/color/right", "/kitti/imu",
@@ -42,32 +32,11 @@ def generate_launch_description():
             output='screen',
             condition=IfCondition(LaunchConfiguration("if_bag_record"))
         ),
-        Node(package="tf2_ros",
-             executable="static_transform_publisher",
-             arguments="0 0 0 0 0 0 base_link velodyne".split(" "),
-             parameters=[]),
-        Node(package="tf2_ros",
-             executable="static_transform_publisher",
-             arguments="0 0 0 0 0 0 base_link gray_camera_left".split(" "),
-             parameters=[]),
-        Node(package="tf2_ros",
-             executable="static_transform_publisher",
-             arguments="0 0 0 0 0 0 base_link gray_camera_right".split(" "),
-             parameters=[]),
-        Node(package="tf2_ros",
-             executable="static_transform_publisher",
-             arguments="0 0 0 0 0 0 base_link color_camera_left".split(" "),
-             parameters=[]),
-        Node(package="tf2_ros",
-             executable="static_transform_publisher",
-             arguments="0 0 0 0 0 0 base_link color_camera_right".split(" "),
-             parameters=[]),
-        Node(package="tf2_ros",
-             executable="static_transform_publisher",
-             arguments="0 0 0 0 0 0 base_link imu".split(" "),
-             parameters=[]),
-        Node(package="tf2_ros",
-             executable="static_transform_publisher",
-             arguments="0 0 0 0 0 0 base_link oxts".split(" "),
-             parameters=[]),
+
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(get_package_share_directory("data2bag"),
+                             "launch", "kitti_rviz2_tf.launch.py")),
+            condition=IfCondition(LaunchConfiguration("if_rviz2_open"))
+        ),
     ])

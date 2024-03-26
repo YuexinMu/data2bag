@@ -23,6 +23,9 @@ int main(int argc, char** argv)
 
   node->declare_parameter("data_path", "/home/myx/develop/data");
 
+  node->declare_parameter("start_frame_id", 0);
+  node->declare_parameter("end_frame_id", 10);
+
   node->declare_parameter("point_cloud_topic_name", "kitti/point_cloud");
   node->declare_parameter("image_gray_left_topic_name", "kitti/image/gray/left");
   node->declare_parameter("image_gray_right_topic_name", "kitti/image/gray/right");
@@ -58,9 +61,12 @@ using namespace std::chrono_literals;
 namespace data2bag
 {
 
-Data2BagKitti::Data2BagKitti(std::shared_ptr<rclcpp::Node>& node) : node_(node), file_index_(0)
+Data2BagKitti::Data2BagKitti(std::shared_ptr<rclcpp::Node>& node) : node_(node)
 {
   node_->get_parameter("data_path", data_path_);
+
+  node_->get_parameter("start_frame_id", start_frame_id_);
+  node_->get_parameter("end_frame_id", end_frame_id_);
 
   node_->get_parameter("point_cloud_topic_name", pub_topic_name_pc_);
   node_->get_parameter("image_gray_left_topic_name", pub_topic_name_img_gray_l_);
@@ -91,12 +97,6 @@ Data2BagKitti::Data2BagKitti(std::shared_ptr<rclcpp::Node>& node) : node_(node),
   publisher_nav_sat_fix_ = node_->create_publisher<sensor_msgs::msg::NavSatFix>("kitti/nav_sat_fix", 10);
   publisher_marker_array_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>("kitti/marker_array", 10);
 
-  for (int type_index = 0; type_index != 6; type_index++)
-  {
-    size_t index = 0;
-    files_index_.push_back(index);
-  }
-
   get_data_path();
   create_data_file_names();
 
@@ -123,7 +123,6 @@ void Data2BagKitti::create_data_file_names()
         if (entry.is_regular_file())
         {
           file_names.push_back(entry.path().filename());
-          files_index_[type_index]++;
         }
       }
 
@@ -140,73 +139,44 @@ void Data2BagKitti::create_data_file_names()
 
 void Data2BagKitti::timer_callback()
 {
-  // 01- KITTI POINT CLOUDS2 MESSAGES
-  if (file_index_ >= files_index_[PublisherType::POINT_CLOUD])
+  if (start_frame_id_ > end_frame_id_)
   {
-    RCLCPP_INFO(node_->get_logger(), "pcl data read complete, the last file NO: '%d'", file_index_ - 1);
+    RCLCPP_INFO_ONCE(node_->get_logger(), "Data read complete, the last frame ID is: '%d'", start_frame_id_ - 1);
   }
   else
   {
+    if(start_frame_id_ %10 == 0){
+      RCLCPP_INFO(node_->get_logger(), "Read frame ID NO: '%d'", start_frame_id_);
+    }
+    // 01- KITTI POINT CLOUDS2 MESSAGES
     sensor_msgs::msg::PointCloud2 point_cloud2_msg;
-    std::string point_cloud_path = path_point_cloud_ + file_names_point_cloud_[file_index_];
+    std::string point_cloud_path = path_point_cloud_ + file_names_point_cloud_[start_frame_id_];
     convert_pcl_to_pointcloud2(point_cloud2_msg, point_cloud_path);
     publisher_point_cloud_->publish(point_cloud2_msg);
-  }
 
-  // 02- KITTI IMAGE MESSAGES
-  if (file_index_ >= files_index_[PublisherType::IMAGE_LEFT_GRAY])
-  {
-    RCLCPP_INFO(node_->get_logger(), "image gray left data read complete, the last file NO: '%d'", file_index_ - 1);
-  }
-  else
-  {
+    // 02- KITTI IMAGE MESSAGES
     auto image_message_gray_left = std::make_unique<sensor_msgs::msg::Image>();
-    std::string img_pat_gray_left = path_image_gray_left_ + file_names_image_color_left_[file_index_];
+    std::string img_pat_gray_left = path_image_gray_left_ + file_names_image_color_left_[start_frame_id_];
     convert_image_to_msg(*image_message_gray_left, img_pat_gray_left, frame_id_img_gray_l_);
     publisher_image_gray_left_->publish(std::move(image_message_gray_left));
-  }
-  if (file_index_ >= files_index_[PublisherType::IMAGE_RIGHT_GRAY])
-  {
-    RCLCPP_INFO(node_->get_logger(), "image gray right data read complete, the last file NO: '%d'", file_index_ - 1);
-  }
-  else
-  {
+
     auto image_message_gray_right = std::make_unique<sensor_msgs::msg::Image>();
-    std::string img_pat_gray_right = path_image_gray_right_ + file_names_image_color_right_[file_index_];
+    std::string img_pat_gray_right = path_image_gray_right_ + file_names_image_color_right_[start_frame_id_];
     convert_image_to_msg(*image_message_gray_right, img_pat_gray_right, frame_id_img_gray_r_);
     publisher_image_gray_right_->publish(std::move(image_message_gray_right));
-  }
-  if (file_index_ >= files_index_[PublisherType::IMAGE_LEFT_COLOR])
-  {
-    RCLCPP_INFO(node_->get_logger(), "image color left data read complete, the last file NO: '%d'", file_index_ - 1);
-  }
-  else
-  {
+
     auto image_message_color_left = std::make_unique<sensor_msgs::msg::Image>();
-    std::string img_pat_color_left = path_image_color_right_ + file_names_image_color_left_[file_index_];
+    std::string img_pat_color_left = path_image_color_right_ + file_names_image_color_left_[start_frame_id_];
     convert_image_to_msg(*image_message_color_left, img_pat_color_left, frame_id_img_color_l_);
     publisher_image_color_left_->publish(std::move(image_message_color_left));
-  }
-  if (file_index_ >= files_index_[PublisherType::IMAGE_RIGHT_COLOR])
-  {
-    RCLCPP_INFO(node_->get_logger(), "image color right data read complete, the last file NO: '%d'", file_index_ - 1);
-  }
-  else
-  {
+
     auto image_message_color_right = std::make_unique<sensor_msgs::msg::Image>();
-    std::string img_pat_color_right = path_image_color_right_ + file_names_image_color_right_[file_index_];
+    std::string img_pat_color_right = path_image_color_right_ + file_names_image_color_right_[start_frame_id_];
     convert_image_to_msg(*image_message_color_right, img_pat_color_right, frame_id_img_color_r_);
     publisher_image_color_right_->publish(std::move(image_message_color_right));
-  }
 
-  // 03- KITTI OXTS to IMU, NAV & MARKERARRAY MESSAGE START//
-  if (file_index_ >= files_index_[PublisherType::ODOMETRY])
-  {
-    RCLCPP_INFO(node_->get_logger(), "otxs data read complete, the last file NO: '%d'", file_index_ - 1);
-  }
-  else
-  {
-    std::string oxts_file_name = path_oxts_ + file_names_oxts_[file_index_];
+    // 03- KITTI OXTS to IMU, NAV & MARKERARRAY MESSAGE START//
+    std::string oxts_file_name = path_oxts_ + file_names_oxts_[start_frame_id_];
     const std::string delimiter = " ";
     std::vector<std::string> oxts_parsed_array = parse_file_data_into_string_array(oxts_file_name, delimiter);
 
@@ -221,24 +191,10 @@ void Data2BagKitti::timer_callback()
     auto marker_array_msg = std::make_unique<visualization_msgs::msg::MarkerArray>();
     prepare_marker_array_msg(oxts_parsed_array, *marker_array_msg);
     publisher_marker_array_->publish(std::move(marker_array_msg));
-  }
 
-  bool end_flag_ = true;
-  for (int type_index = 0; type_index < 6; type_index++)
-  {
-    if (file_index_ < files_index_[type_index])
-    {
-      end_flag_ = false;
-    }
+    // one frame data rend end.
+    start_frame_id_++;
   }
-  if (end_flag_)
-  {
-    RCLCPP_INFO_STREAM(node_->get_logger(), "all file read over!");
-    //    rclcpp::shutdown();
-    timer_->cancel();
-  }
-
-  file_index_++;
 }
 
 std::string Data2BagKitti::get_path(PublisherType publisher_type)

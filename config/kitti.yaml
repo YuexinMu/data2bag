@@ -2,6 +2,9 @@ data2bag_kitti:
   ros__parameters:
     data_path: "/home/myx/develop/data/test_data"
 
+    start_frame_id: 0
+    end_frame_id: 50
+
     point_cloud_topic_name: "/kitti/point_cloud"
     image_gray_left_topic_name: "/kitti/image/gray/left"
     image_gray_right_topic_name: "/kitti/image/gray/right"

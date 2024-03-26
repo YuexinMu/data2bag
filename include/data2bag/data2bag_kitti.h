@@ -63,9 +63,8 @@ public:
 private:
   std::shared_ptr<rclcpp::Node> node_;
   rclcpp::TimerBase::SharedPtr timer_;
-  size_t file_index_;
-  std::vector<size_t> files_index_;
-  std::vector<bool> data_cloud_pub_;
+  size_t start_frame_id_;
+  size_t end_frame_id_;
   unsigned int pub_rate_;
 
   void get_data_path();
