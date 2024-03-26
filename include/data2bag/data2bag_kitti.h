@@ -68,6 +68,7 @@ private:
   std::vector<bool> data_cloud_pub_;
   unsigned int pub_rate_;
 
+  void get_data_path();
   void create_data_file_names();
   void timer_callback();
 
@@ -84,6 +85,7 @@ private:
   std::vector<std::string> parse_file_data_into_string_array(std::string file_name, std::string delimiter);
   std::string mat_type2encoding(int mat_type);
 
+  std::string data_path_;
   std::string pub_topic_name_pc_;
   std::string pub_topic_name_img_gray_l_;
   std::string pub_topic_name_img_gray_r_;

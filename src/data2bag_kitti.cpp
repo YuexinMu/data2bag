@@ -21,12 +21,7 @@ int main(int argc, char** argv)
 
   auto node = std::make_shared<rclcpp::Node>("data2bag_kitti");
 
-  node->declare_parameter("path_point_cloud", " ");
-  node->declare_parameter("path_image_gray_left", " ");
-  node->declare_parameter("path_image_gray_right", " ");
-  node->declare_parameter("path_image_color_left", " ");
-  node->declare_parameter("path_image_color_right", " ");
-  node->declare_parameter("path_oxts", " ");
+  node->declare_parameter("data_path", "/home/myx/develop/data");
 
   node->declare_parameter("point_cloud_topic_name", "kitti/point_cloud");
   node->declare_parameter("image_gray_left_topic_name", "kitti/image/gray/left");
@@ -37,14 +32,14 @@ int main(int argc, char** argv)
   node->declare_parameter("nav_sat_fix_topic_name", "kitti/nav_sat_fix");
   node->declare_parameter("marker_arr_topic_name", "kitti/marker_array");
 
-  node->declare_parameter("point_cloud_frame_id", "base_link");
-  node->declare_parameter("image_gray_left_frame_id", "base_link");
-  node->declare_parameter("image_gray_right_frame_id", "base_link");
-  node->declare_parameter("image_color_left_frame_id", "base_link");
-  node->declare_parameter("image_color_right_frame_id", "base_link");
-  node->declare_parameter("imu_frame_id", "base_link");
-  node->declare_parameter("nav_sat_frame_id", "base_link");
-  node->declare_parameter("marker_array_frame_id", "base_link");
+  node->declare_parameter("point_cloud_frame_id", "velodyne");
+  node->declare_parameter("image_gray_left_frame_id", "gray_camera_left");
+  node->declare_parameter("image_gray_right_frame_id", "gray_camera_right");
+  node->declare_parameter("image_color_left_frame_id", "color_camera_left");
+  node->declare_parameter("image_color_right_frame_id", "color_camera_right");
+  node->declare_parameter("imu_frame_id", "imu");
+  node->declare_parameter("nav_sat_frame_id", "oxts");
+  node->declare_parameter("marker_array_frame_id", "oxts");
 
   node->declare_parameter("publish_rate", 10);
 
@@ -65,12 +60,7 @@ namespace data2bag
 
 Data2BagKitti::Data2BagKitti(std::shared_ptr<rclcpp::Node>& node) : node_(node), file_index_(0)
 {
-  node_->get_parameter("path_point_cloud", path_point_cloud_);
-  node_->get_parameter("path_image_gray_left", path_image_gray_left_);
-  node_->get_parameter("path_image_gray_right", path_image_gray_right_);
-  node_->get_parameter("path_image_color_left", path_image_color_left_);
-  node_->get_parameter("path_image_color_right", path_image_color_right_);
-  node_->get_parameter("path_oxts", path_oxts_);
+  node_->get_parameter("data_path", data_path_);
 
   node_->get_parameter("point_cloud_topic_name", pub_topic_name_pc_);
   node_->get_parameter("image_gray_left_topic_name", pub_topic_name_img_gray_l_);
@@ -107,6 +97,7 @@ Data2BagKitti::Data2BagKitti(std::shared_ptr<rclcpp::Node>& node) : node_(node),
     files_index_.push_back(index);
   }
 
+  get_data_path();
   create_data_file_names();
 
   timer_ = node_->create_wall_timer(std::chrono::milliseconds(1000 / pub_rate_),
@@ -531,6 +522,15 @@ std::string Data2BagKitti::mat_type2encoding(int mat_type)
     default:
       throw std::runtime_error("Unsupported encoding type");
   }
+}
+void Data2BagKitti::get_data_path()
+{
+  path_point_cloud_ = data_path_ + "/velodyne_points/data/";
+  path_image_gray_left_ = data_path_ + "/image_00/data/";
+  path_image_gray_right_ = data_path_ + "/image_01/data/";
+  path_image_color_left_ = data_path_ + "/image_02/data/";
+  path_image_color_right_ = data_path_ + "/image_03/data/";
+  path_oxts_ = data_path_ + "/oxts/data/";
 }
 
 }  // namespace data2bag

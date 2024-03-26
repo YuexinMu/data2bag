@@ -1,11 +1,6 @@
 data2bag_kitti:
   ros__parameters:
-    path_point_cloud: "/home/myx/develop/data/kitt0_synced/0013/velodyne_points/data/"
-    path_image_gray_left: "/home/myx/develop/data/kitt0_synced/0013/image_00/data/"
-    path_image_gray_right: "/home/myx/develop/data/kitt0_synced/0013/image_01/data/"
-    path_image_color_left: "/home/myx/develop/data/kitt0_synced/0013/image_02/data/"
-    path_image_color_right: "/home/myx/develop/data/kitt0_synced/0013/image_03/data/"
-    path_oxts: "/home/myx/develop/data/kitt0_synced/0013/oxts/data/"
+    data_path: "/home/myx/develop/data/test_data"
 
     point_cloud_topic_name: "/kitti/point_cloud"
     image_gray_left_topic_name: "/kitti/image/gray/left"
@@ -16,13 +11,13 @@ data2bag_kitti:
     nav_sat_fix_topic_name: "/kitti/nav_sat_fix"
     marker_arr_topic_name: "/kitti/marker_array"
 
-    point_cloud_frame_id: "/base_link"
-    image_gray_left_frame_id: "/base_link"
-    image_gray_right_frame_id: "/base_link"
-    image_color_left_frame_id: "/base_link"
-    image_color_right_frame_id: "/base_link"
-    imu_frame_id: "/base_link"
-    nav_sat_frame_id: "/base_link"
-    marker_arr_frame_id: "/base_link"
+    point_cloud_frame_id: "velodyne"
+    image_gray_left_frame_id: "gray_camera_left"
+    image_gray_right_frame_id: "gray_camera_right"
+    image_color_left_frame_id: "color_camera_left"
+    image_color_right_frame_id: "color_camera_right"
+    imu_frame_id: "imu"
+    nav_sat_frame_id: "oxts"
+    marker_arr_frame_id: "oxts"
 
     publish_rate: 10

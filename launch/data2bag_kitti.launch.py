@@ -12,11 +12,11 @@ from launch_ros.substitutions import FindPackageShare
 def generate_launch_description():
     yaml_config_dir = os.path.join(get_package_share_directory('data2bag'), 'config', 'kitti.yaml')
     rviz_config_dir = os.path.join(get_package_share_directory('data2bag'), 'config', 'kitti.rviz')
-    save_bag_path = "/home/myx/develop/Swarm-SLAM/src/cslam_experiments/data/Kitti00/data_0013"
+    save_bag_path = "/home/myx/develop/data/test_data/data_bag"
 
     return LaunchDescription([
         DeclareLaunchArgument('if_bag_record', default_value='True', description='Whether to record bag or not'),
-        DeclareLaunchArgument('if_rviz2_open', default_value='False', description='Whether to open rviz2 or not'),
+        DeclareLaunchArgument('if_rviz2_open', default_value='True', description='Whether to open rviz2 or not'),
 
         Node(
             package='data2bag',
@@ -41,22 +41,33 @@ def generate_launch_description():
                  "/kitti/nav_sat_fix", "/kitti/marker_array"],
             output='screen',
             condition=IfCondition(LaunchConfiguration("if_bag_record"))
-        )
-
-        # TimerAction(
-        #     period=0.01,  # delay 10ms
-        #     actions=[
-        #         ExecuteProcess(
-        #             cmd=['ros2', 'bag', 'record', '-o', ros2bag_record_path],
-        #             output='screen',
-        #             condition=IfCondition(LaunchConfiguration('if_bag_record'))
-        #         )
-        #     ]
-        # ),
-        #
-        # ExecuteProcess(
-        #     cmd=['rviz2', 'rviz2', 'rviz2'],
-        #     output='screen',
-        #     condition=IfCondition(LaunchConfiguration('if_bag_record'))
-        # )
+        ),
+        Node(package="tf2_ros",
+             executable="static_transform_publisher",
+             arguments="0 0 0 0 0 0 base_link velodyne".split(" "),
+             parameters=[]),
+        Node(package="tf2_ros",
+             executable="static_transform_publisher",
+             arguments="0 0 0 0 0 0 base_link gray_camera_left".split(" "),
+             parameters=[]),
+        Node(package="tf2_ros",
+             executable="static_transform_publisher",
+             arguments="0 0 0 0 0 0 base_link gray_camera_right".split(" "),
+             parameters=[]),
+        Node(package="tf2_ros",
+             executable="static_transform_publisher",
+             arguments="0 0 0 0 0 0 base_link color_camera_left".split(" "),
+             parameters=[]),
+        Node(package="tf2_ros",
+             executable="static_transform_publisher",
+             arguments="0 0 0 0 0 0 base_link color_camera_right".split(" "),
+             parameters=[]),
+        Node(package="tf2_ros",
+             executable="static_transform_publisher",
+             arguments="0 0 0 0 0 0 base_link imu".split(" "),
+             parameters=[]),
+        Node(package="tf2_ros",
+             executable="static_transform_publisher",
+             arguments="0 0 0 0 0 0 base_link oxts".split(" "),
+             parameters=[]),
     ])
